@@ -37,6 +37,7 @@
 #include "hal/efuse_hal.h"
 #include <Arduino.h>
 #include <Arduino_GFX_Library.h>
+#include <Touch_GT911.h>
 
 // first game defines
 #include "game/defs.hpp"
@@ -89,6 +90,9 @@ static Arduino_ESP32RGBPanel gfx{
 
 static uint16_t *gfx_frame_buffer = nullptr;
 
+static Touch_GT911 touch{19 /*SDA*/, 20 /*SCL*/, 0 /*INT*/,
+                         38 /*RST*/, 800,        480};
+
 // pixel precision collision detection between on screen sprites
 // allocated in 'setup()'
 static constexpr int collision_map_size_B =
@@ -135,6 +139,10 @@ auto setup() -> void {
 
   // device.init();
 
+  touch.begin();
+  gfx.begin();
+  gfx_frame_buffer = gfx.getFrameBuffer(800, 480);
+
   // printf("------------------- peripherals --------------------------\n");
   // printf("           SD card: %s\n", device.sd_available() ? "present" :
   // "n/a"); printf("            SPIFFS: %s\n",
@@ -166,14 +174,6 @@ auto setup() -> void {
   printf("----------------------------------------------------------\n");
 
   heap_caps_print_heap_info(MALLOC_CAP_DEFAULT);
-
-  gfx.begin();
-  // gfx.fillScreen(BLACK);
-  // gfx.setCursor(10, 10);
-  // gfx.setTextColor(RED);
-  // gfx.println("Hello World!");
-  // gfx.flush();
-  gfx_frame_buffer = gfx.getFrameBuffer(800, 480);
 }
 
 auto loop() -> void {
@@ -183,13 +183,21 @@ auto loop() -> void {
            objects.allocated_list_len(), sprites.allocated_list_len());
   }
 
-  // if (device.display_is_touched()) {
-  //   uint16_t x = 0;
-  //   uint16_t y = 0;
-  //   uint8_t pressure = 0;
-  //   device.display_get_touch(x, y, pressure);
-  //   main_on_touch(x, y, pressure);
-  // }
+  touch.read();
+  if (touch.isTouched) {
+    // for (int i = 0; i < touch.touches; i++) {
+    //   Serial.print("Touch ");
+    //   Serial.print(i + 1);
+    //   Serial.print(": ");
+    //   Serial.print("  x: ");
+    //   Serial.print(touch.points[i].x);
+    //   Serial.print("  y: ");
+    //   Serial.print(touch.points[i].y);
+    //   Serial.print("  size: ");
+    //   Serial.println(touch.points[i].size);
+    // }
+    main_on_touch(touch.points[0].x, touch.points[0].y, touch.points[0].size);
+  }
 
   engine_loop();
 }
