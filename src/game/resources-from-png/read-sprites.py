@@ -31,4 +31,5 @@ if __name__ == "__main__":
     if len(sys.argv) < 4:
         print("usage: read-sprites <width> <height> <filename>")
         sys.exit(1)
-    print_sprites_as_game_resource(int(sys.argv[1]), int(sys.argv[2]), sys.argv[3])
+    print_sprites_as_game_resource(
+        int(sys.argv[1]), int(sys.argv[2]), sys.argv[3])

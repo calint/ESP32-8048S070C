@@ -12,7 +12,6 @@
 
 // palette used when rendering tile images
 // converts uint8_t to uint16_t rgb 565 (red being the highest bits)
-// note. lower and higher byte swapped
 static constexpr uint16_t palette_tiles[256]{
 #include "game/resources/palette_tiles.hpp"
 };
