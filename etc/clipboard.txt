@@ -1,0 +1,11 @@
+# tag with date and time
+TAG=$(date "+%Y-%m-%d--%H-%M") && git tag $TAG && git push origin $TAG
+
+# view assembler
+~/.platformio/packages/toolchain-xtensa-esp32/bin/xtensa-esp32-elf-objdump -S .pio/build/JC4827W543R/src/main.cpp.o | less
+
+# commit and push
+git add . && git commit -m "." && git push
+
+# revert changes to last commit
+git reset --hard HEAD

@@ -1,0 +1,33 @@
+# from https://clang.llvm.org/extra/clang-tidy/
+Checks: '
+    cppcoreguidelines-*,
+    -cppcoreguidelines-avoid-magic-numbers, # device implementations use too many
+    -cppcoreguidelines-pro-type-union-access, # "driver/spi_master.h" uses unions
+    -cppcoreguidelines-non-private-member-variables-in-classes, # public members ok
+    -cppcoreguidelines-pro-bounds-pointer-arithmetic, # pointer shenanigans necessary
+    -cppcoreguidelines-pro-bounds-constant-array-index, # indexing in arrays necessary
+    -cppcoreguidelines-pro-type-reinterpret-cast, # too useful
+    -cppcoreguidelines-owning-memory, # does not work well with o1store
+    -cppcoreguidelines-pro-type-vararg, # using printf
+    -cppcoreguidelines-init-variables, # too many false positives, relying on compiler
+    -cppcoreguidelines-avoid-non-const-global-variables, # globals ok
+    -cppcoreguidelines-narrowing-conversions, # ok
+    -cppcoreguidelines-avoid-c-arrays, # multidimensional arrays are awkward
+    -cppcoreguidelines-prefer-member-initializer, # not always preferred regarding readability
+    -cppcoreguidelines-pro-type-static-cast-downcast, # necessary without RTTI
+    bugprone-*,
+    -bugprone-easily-swappable-parameters, # it is ok
+    -bugprone-implicit-widening-of-multiplication-result, # cannot fix that
+    -bugprone-narrowing-conversions, # known consequences
+    modernize-*,
+    -modernize-avoid-c-arrays, # same as cppcoreguidelines
+    -modernize-use-auto, # reduces readability
+    clang-analyzer-*,
+    concurrency-*,
+    performance-*,
+    google-*,
+    -google-readability-casting, # int(x) is more readable than static_cast<int>(x)
+    misc-*,
+    -misc-non-private-member-variables-in-classes, # public members ok
+    -misc-no-recursion, # allow recursions
+'
