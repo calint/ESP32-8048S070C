@@ -50,15 +50,10 @@
 // then the main entry file to user code
 #include "game/main.hpp"
 
-#define GFX_BL                                                                 \
-  DF_GFX_BL // default backlight pin, you may replace DF_GFX_BL to actual
-            // backlight pin
+#define GFX_BL DF_GFX_BL
 #define TFT_BL 2
 
-Arduino_ESP32RGBPanel bus{
-    GFX_NOT_DEFINED /* CS */,
-    GFX_NOT_DEFINED /* SCK */,
-    GFX_NOT_DEFINED /* SDA */,
+static Arduino_ESP32RGBPanel gfx{
     41 /* DE */,
     40 /* VSYNC */,
     39 /* HSYNC */,
@@ -78,26 +73,21 @@ Arduino_ESP32RGBPanel bus{
     7 /* B1 */,
     6 /* B2 */,
     5 /* B3 */,
-    4 /* B4 */
-};
-// option 1:
-// 7寸 50PIN 800*480
-Arduino_RPi_DPI_RGBPanel gfx{
-    &bus,
-    800 /* width */,
+    4 /* B4 */,
     0 /* hsync_polarity */,
     210 /* hsync_front_porch */,
     30 /* hsync_pulse_width */,
     16 /* hsync_back_porch */,
-    480 /* height */,
     0 /* vsync_polarity */,
     22 /* vsync_front_porch */,
     13 /* vsync_pulse_width */,
-    10 /* vsync_back_porch */,
-    1 /* pclk_active_neg */,
-    16000000 /* prefer_speed */,
-    false /* auto_flush */
+    10 /* vsync_back_porch */
+       // 1 /* pclk_active_neg */,
+       // 16000000 /* prefer_speed */,
+       // false /* auto_flush */
 };
+
+static uint16_t *gfx_frame_buffer = nullptr;
 
 // pixel precision collision detection between on screen sprites
 // allocated in 'setup()'
@@ -183,6 +173,7 @@ auto setup() -> void {
   // gfx.setTextColor(RED);
   // gfx.println("Hello World!");
   // gfx.flush();
+  gfx_frame_buffer = gfx.getFrameBuffer(800, 480);
 }
 
 auto loop() -> void {
@@ -397,7 +388,7 @@ static auto render(int const x, int const y) -> void {
   // pointer to collision map starting at top left of screen
   sprite_ix *collision_map_row_ptr = collision_map;
   // buffer to render
-  uint16_t *render_buf_ptr = gfx.getFramebuffer();
+  uint16_t *render_buf_ptr = gfx_frame_buffer;
   // for all lines on display
   int remaining_y = display_height;
   update_render_sprite_lists();
@@ -433,6 +424,5 @@ static auto render(int const x, int const y) -> void {
     ++tile_y;
     remaining_y -= render_n_scanlines;
     tiles_map_row_ptr += tile_map_width;
-    gfx.flush();
   }
 }
