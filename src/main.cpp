@@ -36,7 +36,7 @@
 
 #include "hal/efuse_hal.h"
 #include <Arduino.h>
-#include <ESP32RGBPanel.h>
+#include <ESP32RGBPanel.hpp>
 #include <Touch_GT911.h>
 
 // first game defines
@@ -140,8 +140,7 @@ auto setup() -> void {
   touch.begin();
   touch.setRotation(1);
 
-  gfx.begin();
-  gfx_frame_buffer = gfx.getFrameBuffer(800, 480);
+  gfx_frame_buffer = gfx.frame_buffer(800, 480);
 
   collision_map = static_cast<sprite_ix *>(
       calloc(display_width * display_height, sizeof(sprite_ix)));
