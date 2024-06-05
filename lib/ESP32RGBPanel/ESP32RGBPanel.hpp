@@ -62,7 +62,7 @@ public:
                 uint16_t vsync_polarity, uint16_t vsync_front_porch,
                 uint16_t vsync_pulse_width, uint16_t vsync_back_porch,
                 uint16_t pclk_active_neg = 0, uint16_t de_idle_high = 0,
-                uint16_t pclk_idle_high = 0)
+                uint16_t pclk_idle_high = 0, int32_t speed = 12000000L)
       : de_(de), vsync_(vsync), hsync_(hsync), pclk_(pclk), r0_(r0), r1_(r1),
         r2_(r2), r3_(r3), r4_(r4), g0_(g0), g1_(g1), g2_(g2), g3_(g3), g4_(g4),
         g5_(g5), b0_(b0), b1_(b1), b2_(b2), b3_(b3), b4_(b4),
@@ -72,7 +72,8 @@ public:
         vsync_front_porch_(vsync_front_porch),
         vsync_pulse_width_(vsync_pulse_width),
         vsync_back_porch_(vsync_back_porch), pclk_active_neg_(pclk_active_neg),
-        de_idle_high_(de_idle_high), pclk_idle_high_(pclk_idle_high) {}
+        de_idle_high_(de_idle_high), pclk_idle_high_(pclk_idle_high),
+        speed_(speed) {}
 
   uint16_t *frame_buffer(int16_t width, int16_t height) {
 
@@ -142,7 +143,6 @@ public:
   }
 
 private:
-  int32_t speed_ = 12000000L;
   int8_t de_, vsync_, hsync_, pclk_;
   int8_t r0_, r1_, r2_, r3_, r4_;
   int8_t g0_, g1_, g2_, g3_, g4_, g5_;
@@ -158,6 +158,7 @@ private:
   uint16_t pclk_active_neg_;
   uint16_t de_idle_high_;
   uint16_t pclk_idle_high_;
+  int32_t speed_;
 
   esp_lcd_panel_handle_t panel_handle_ = nullptr;
 };
