@@ -1,26 +1,13 @@
 // code lifted from: https://github.com/moononournation/Arduino_GFX/#v1.4.7
 
-#include "driver/gpio.h"
-#include "esp32s3/rom/cache.h"
-#include "esp_err.h"
-#include "esp_heap_caps.h"
-#include "esp_intr_alloc.h"
 #include "esp_lcd_panel_interface.h"
-#include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_panel_rgb.h"
-#include "esp_lcd_panel_vendor.h"
-#include "esp_log.h"
 #include "esp_pm.h"
 #include "esp_private/gdma.h"
-#include "esp_timer.h"
 #include "hal/dma_types.h"
 #include "hal/lcd_hal.h"
 #include "hal/lcd_ll.h"
-
-// This function is located in ROM (also see
-// esp_rom/${target}/ld/${target}.rom.ld)
-extern int Cache_WriteBack_Addr(uint32_t addr, uint32_t size);
 
 // extract from esp-idf esp_lcd_rgb_panel.c
 struct esp_rgb_panel_t {
