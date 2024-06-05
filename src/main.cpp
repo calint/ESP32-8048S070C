@@ -36,7 +36,7 @@
 
 #include "hal/efuse_hal.h"
 #include <Arduino.h>
-#include <Arduino_GFX_Library.h>
+#include <ESP32RGBPanel.h>
 #include <Touch_GT911.h>
 
 // first game defines
@@ -54,7 +54,7 @@
 #define GFX_BL DF_GFX_BL
 #define TFT_BL 2
 
-static Arduino_ESP32RGBPanel gfx{
+static ESP32RGBPanel gfx{
     41 /* DE */,
     40 /* VSYNC */,
     39 /* HSYNC */,
