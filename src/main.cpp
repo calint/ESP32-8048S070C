@@ -137,16 +137,11 @@ auto setup() -> void {
 
   printf_render_sprite_entries_ram_usage();
 
-  // device.init();
-
   touch.begin();
+  touch.setRotation(1);
+
   gfx.begin();
   gfx_frame_buffer = gfx.getFrameBuffer(800, 480);
-
-  // printf("------------------- peripherals --------------------------\n");
-  // printf("           SD card: %s\n", device.sd_available() ? "present" :
-  // "n/a"); printf("            SPIFFS: %s\n",
-  //        device.spiffs_available() ? "present" : "n/a");
 
   collision_map = static_cast<sprite_ix *>(
       calloc(display_width * display_height, sizeof(sprite_ix)));
@@ -185,18 +180,12 @@ auto loop() -> void {
 
   touch.read();
   if (touch.isTouched) {
-    // for (int i = 0; i < touch.touches; i++) {
-    //   Serial.print("Touch ");
-    //   Serial.print(i + 1);
-    //   Serial.print(": ");
-    //   Serial.print("  x: ");
-    //   Serial.print(touch.points[i].x);
-    //   Serial.print("  y: ");
-    //   Serial.print(touch.points[i].y);
-    //   Serial.print("  size: ");
-    //   Serial.println(touch.points[i].size);
-    // }
-    main_on_touch(touch.points[0].x, touch.points[0].y, touch.points[0].size);
+    printf("touches: %d\n", touch.touches);
+    for (int i = 0; i < touch.touches; ++i) {
+      printf("touch[%d] = {%d, %d, %d}\n", i, touch.points[i].x,
+             touch.points[i].y, touch.points[i].size);
+      main_on_touch(touch.points[i].x, touch.points[i].y, touch.points[i].size);
+    }
   }
 
   engine_loop();

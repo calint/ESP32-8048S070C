@@ -238,10 +238,10 @@ static auto random_float(float const min, float const max) -> float {
 
 // returns x on display for raw touch value x
 static auto display_x_for_touch(int16_t const x) -> float {
-  return float(800 - x);
+  return float(x);
 }
 
 // returns y on display for raw touch value y
 static auto display_y_for_touch(int16_t const y) -> float {
-  return float(480 - y);
+  return float(y);
 }
