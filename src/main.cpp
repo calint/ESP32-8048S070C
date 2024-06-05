@@ -361,7 +361,20 @@ static constexpr auto count_right_shifts_until_1(int num) -> int {
   return (num <= 1) ? 0 : 1 + count_right_shifts_until_1(num >> 1);
 }
 
-// renders tile map and sprites
+// static uint16_t nc = 0;
+// static auto render(int const x, int const y) -> void {
+//   // memset(collision_map, sprite_ix_reserved, collision_map_size_B);
+//   int n = 800 * 480;
+//   uint16_t *ptr = gfx_frame_buffer;
+//   uint16_t c = nc;
+//   while (n--) {
+//     *ptr++ = c++;
+//   }
+//   nc++;
+//   return;
+// }
+
+// // renders tile map and sprites
 static auto render(int const x, int const y) -> void {
   // clear collisions map
   // note. works on other sizes of type 'sprite_ix' because reserved value
