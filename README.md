@@ -25,8 +25,6 @@
   - framework-arduinoespressif32 @ 3.20014.231204 (2.0.14) 
   - tool-esptoolpy @ 1.40501.0 (4.5.1) 
   - toolchain-xtensa-esp32 @ 8.4.0+2021r2-patch5
-* dependencies included in `/lib/`:
-  - https://github.com/Bodmer/TFT_eSPI/releases/tag/V2.5.43
-  - https://github.com/PaulStoffregen/XPT2046_Touchscreen/releases/tag/v1.4
-  - https://github.com/TheNitek/XPT2046_Bitbang_Arduino_Library/releases/tag/v2.0.1
-
+* dependencies:
+  - https://github.com/moononournation/Arduino_GFX/releases/tag/v1.4.7
+  - lib/Touch_GT911
