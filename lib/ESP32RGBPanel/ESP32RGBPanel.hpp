@@ -1,6 +1,8 @@
 // code lifted from: https://github.com/moononournation/Arduino_GFX/#v1.4.7
 
+#include "driver/gpio.h"
 #include "esp32s3/rom/cache.h"
+#include "esp_err.h"
 #include "esp_heap_caps.h"
 #include "esp_intr_alloc.h"
 #include "esp_lcd_panel_interface.h"
@@ -8,14 +10,13 @@
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_panel_rgb.h"
 #include "esp_lcd_panel_vendor.h"
+#include "esp_log.h"
 #include "esp_pm.h"
 #include "esp_private/gdma.h"
+#include "esp_timer.h"
 #include "hal/dma_types.h"
 #include "hal/lcd_hal.h"
 #include "hal/lcd_ll.h"
-
-#define GFX_NOT_DEFINED -1
-#define GPIO_NUM_NC -1
 
 // This function is located in ROM (also see
 // esp_rom/${target}/ld/${target}.rom.ld)
@@ -73,111 +74,106 @@ public:
                 uint16_t hsync_pulse_width, uint16_t hsync_back_porch,
                 uint16_t vsync_polarity, uint16_t vsync_front_porch,
                 uint16_t vsync_pulse_width, uint16_t vsync_back_porch,
-                uint16_t pclk_active_neg = 0,
-                int32_t prefer_speed = GFX_NOT_DEFINED,
-                uint16_t de_idle_high = 0, uint16_t pclk_idle_high = 0)
-      : _de(de), _vsync(vsync), _hsync(hsync), _pclk(pclk), _r0(r0), _r1(r1),
-        _r2(r2), _r3(r3), _r4(r4), _g0(g0), _g1(g1), _g2(g2), _g3(g3), _g4(g4),
-        _g5(g5), _b0(b0), _b1(b1), _b2(b2), _b3(b3), _b4(b4),
-        _hsync_polarity(hsync_polarity), _hsync_front_porch(hsync_front_porch),
-        _hsync_pulse_width(hsync_pulse_width),
-        _hsync_back_porch(hsync_back_porch), _vsync_polarity(vsync_polarity),
-        _vsync_front_porch(vsync_front_porch),
-        _vsync_pulse_width(vsync_pulse_width),
-        _vsync_back_porch(vsync_back_porch), _pclk_active_neg(pclk_active_neg),
-        _prefer_speed(prefer_speed), _de_idle_high(de_idle_high),
-        _pclk_idle_high(pclk_idle_high) {}
+                uint16_t pclk_active_neg = 0, uint16_t de_idle_high = 0,
+                uint16_t pclk_idle_high = 0)
+      : de_(de), vsync_(vsync), hsync_(hsync), pclk_(pclk), r0_(r0), r1_(r1),
+        r2_(r2), r3_(r3), r4_(r4), g0_(g0), g1_(g1), g2_(g2), g3_(g3), g4_(g4),
+        g5_(g5), b0_(b0), b1_(b1), b2_(b2), b3_(b3), b4_(b4),
+        hsync_polarity_(hsync_polarity), hsync_front_porch_(hsync_front_porch),
+        hsync_pulse_width_(hsync_pulse_width),
+        hsync_back_porch_(hsync_back_porch), vsync_polarity_(vsync_polarity),
+        vsync_front_porch_(vsync_front_porch),
+        vsync_pulse_width_(vsync_pulse_width),
+        vsync_back_porch_(vsync_back_porch), pclk_active_neg_(pclk_active_neg),
+        de_idle_high_(de_idle_high), pclk_idle_high_(pclk_idle_high) {}
 
-  uint16_t *frame_buffer(int16_t w, int16_t h) {
+  uint16_t *frame_buffer(int16_t width, int16_t height) {
 
-    esp_lcd_rgb_panel_config_t *_panel_config =
+    esp_lcd_rgb_panel_config_t *panel_config_ =
         (esp_lcd_rgb_panel_config_t *)heap_caps_calloc(
             1, sizeof(esp_lcd_rgb_panel_config_t),
             MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
 
-    _panel_config->clk_src = LCD_CLK_SRC_PLL160M;
-    _panel_config->timings.pclk_hz =
-        (_prefer_speed == GFX_NOT_DEFINED) ? _speed : _prefer_speed;
-    _panel_config->timings.h_res = w;
-    _panel_config->timings.v_res = h;
+    panel_config_->clk_src = LCD_CLK_SRC_PLL160M;
+    panel_config_->timings.pclk_hz = speed_;
+    panel_config_->timings.h_res = width;
+    panel_config_->timings.v_res = height;
     // The following parameters should refer to LCD spec
-    _panel_config->timings.hsync_pulse_width = _hsync_pulse_width;
-    _panel_config->timings.hsync_back_porch = _hsync_back_porch;
-    _panel_config->timings.hsync_front_porch = _hsync_front_porch;
-    _panel_config->timings.vsync_pulse_width = _vsync_pulse_width;
-    _panel_config->timings.vsync_back_porch = _vsync_back_porch;
-    _panel_config->timings.vsync_front_porch = _vsync_front_porch;
-    _panel_config->timings.flags.hsync_idle_low =
-        (_hsync_polarity == 0) ? 1 : 0;
-    _panel_config->timings.flags.vsync_idle_low =
-        (_vsync_polarity == 0) ? 1 : 0;
-    _panel_config->timings.flags.de_idle_high = _de_idle_high;
-    _panel_config->timings.flags.pclk_active_neg = _pclk_active_neg;
-    _panel_config->timings.flags.pclk_idle_high = _pclk_idle_high;
+    panel_config_->timings.hsync_pulse_width = hsync_pulse_width_;
+    panel_config_->timings.hsync_back_porch = hsync_back_porch_;
+    panel_config_->timings.hsync_front_porch = hsync_front_porch_;
+    panel_config_->timings.vsync_pulse_width = vsync_pulse_width_;
+    panel_config_->timings.vsync_back_porch = vsync_back_porch_;
+    panel_config_->timings.vsync_front_porch = vsync_front_porch_;
+    panel_config_->timings.flags.hsync_idle_low =
+        (hsync_polarity_ == 0) ? 1 : 0;
+    panel_config_->timings.flags.vsync_idle_low =
+        (vsync_polarity_ == 0) ? 1 : 0;
+    panel_config_->timings.flags.de_idle_high = de_idle_high_;
+    panel_config_->timings.flags.pclk_active_neg = pclk_active_neg_;
+    panel_config_->timings.flags.pclk_idle_high = pclk_idle_high_;
 
-    _panel_config->data_width =
-        16; // RGB565 in parallel mode, thus 16bit in width
-    _panel_config->sram_trans_align = 8;
-    _panel_config->psram_trans_align = 64;
-    _panel_config->hsync_gpio_num = _hsync;
-    _panel_config->vsync_gpio_num = _vsync;
-    _panel_config->de_gpio_num = _de;
-    _panel_config->pclk_gpio_num = _pclk;
+    panel_config_->data_width = 16;
+    panel_config_->sram_trans_align = 8;
+    panel_config_->psram_trans_align = 64;
+    panel_config_->hsync_gpio_num = hsync_;
+    panel_config_->vsync_gpio_num = vsync_;
+    panel_config_->de_gpio_num = de_;
+    panel_config_->pclk_gpio_num = pclk_;
 
-    _panel_config->data_gpio_nums[0] = _b0;
-    _panel_config->data_gpio_nums[1] = _b1;
-    _panel_config->data_gpio_nums[2] = _b2;
-    _panel_config->data_gpio_nums[3] = _b3;
-    _panel_config->data_gpio_nums[4] = _b4;
-    _panel_config->data_gpio_nums[5] = _g0;
-    _panel_config->data_gpio_nums[6] = _g1;
-    _panel_config->data_gpio_nums[7] = _g2;
-    _panel_config->data_gpio_nums[8] = _g3;
-    _panel_config->data_gpio_nums[9] = _g4;
-    _panel_config->data_gpio_nums[10] = _g5;
-    _panel_config->data_gpio_nums[11] = _r0;
-    _panel_config->data_gpio_nums[12] = _r1;
-    _panel_config->data_gpio_nums[13] = _r2;
-    _panel_config->data_gpio_nums[14] = _r3;
-    _panel_config->data_gpio_nums[15] = _r4;
+    panel_config_->data_gpio_nums[0] = b0_;
+    panel_config_->data_gpio_nums[1] = b1_;
+    panel_config_->data_gpio_nums[2] = b2_;
+    panel_config_->data_gpio_nums[3] = b3_;
+    panel_config_->data_gpio_nums[4] = b4_;
+    panel_config_->data_gpio_nums[5] = g0_;
+    panel_config_->data_gpio_nums[6] = g1_;
+    panel_config_->data_gpio_nums[7] = g2_;
+    panel_config_->data_gpio_nums[8] = g3_;
+    panel_config_->data_gpio_nums[9] = g4_;
+    panel_config_->data_gpio_nums[10] = g5_;
+    panel_config_->data_gpio_nums[11] = r0_;
+    panel_config_->data_gpio_nums[12] = r1_;
+    panel_config_->data_gpio_nums[13] = r2_;
+    panel_config_->data_gpio_nums[14] = r3_;
+    panel_config_->data_gpio_nums[15] = r4_;
 
-    _panel_config->disp_gpio_num = GPIO_NUM_NC;
+    panel_config_->disp_gpio_num = GPIO_NUM_NC;
 
-    _panel_config->flags.disp_active_low = 0;
-    _panel_config->flags.relax_on_idle = 0;
-    _panel_config->flags.fb_in_psram = 1; // allocate frame buffer in PSRAM
+    panel_config_->flags.disp_active_low = 0;
+    panel_config_->flags.relax_on_idle = 0;
+    panel_config_->flags.fb_in_psram = true;
 
-    ESP_ERROR_CHECK(esp_lcd_new_rgb_panel(_panel_config, &_panel_handle));
-    ESP_ERROR_CHECK(esp_lcd_panel_reset(_panel_handle));
-    ESP_ERROR_CHECK(esp_lcd_panel_init(_panel_handle));
+    ESP_ERROR_CHECK(esp_lcd_new_rgb_panel(panel_config_, &panel_handle_));
+    ESP_ERROR_CHECK(esp_lcd_panel_reset(panel_handle_));
+    ESP_ERROR_CHECK(esp_lcd_panel_init(panel_handle_));
 
-    _rgb_panel = __containerof(_panel_handle, esp_rgb_panel_t, base);
+    rgb_panel_ = __containerof(panel_handle_, esp_rgb_panel_t, base);
 
-    LCD_CAM.lcd_ctrl2.lcd_vsync_idle_pol = _vsync_polarity;
-    LCD_CAM.lcd_ctrl2.lcd_hsync_idle_pol = _hsync_polarity;
+    LCD_CAM.lcd_ctrl2.lcd_vsync_idle_pol = vsync_polarity_;
+    LCD_CAM.lcd_ctrl2.lcd_hsync_idle_pol = hsync_polarity_;
 
-    return (uint16_t *)_rgb_panel->fb;
+    return (uint16_t *)rgb_panel_->fb;
   }
 
 private:
-  int32_t _speed = 12000000L;
-  int8_t _de, _vsync, _hsync, _pclk;
-  int8_t _r0, _r1, _r2, _r3, _r4;
-  int8_t _g0, _g1, _g2, _g3, _g4, _g5;
-  int8_t _b0, _b1, _b2, _b3, _b4;
-  uint16_t _hsync_polarity;
-  uint16_t _hsync_front_porch;
-  uint16_t _hsync_pulse_width;
-  uint16_t _hsync_back_porch;
-  uint16_t _vsync_polarity;
-  uint16_t _vsync_front_porch;
-  uint16_t _vsync_pulse_width;
-  uint16_t _vsync_back_porch;
-  uint16_t _pclk_active_neg;
-  int32_t _prefer_speed = 12000000L;
-  uint16_t _de_idle_high;
-  uint16_t _pclk_idle_high;
+  int32_t speed_ = 12000000L;
+  int8_t de_, vsync_, hsync_, pclk_;
+  int8_t r0_, r1_, r2_, r3_, r4_;
+  int8_t g0_, g1_, g2_, g3_, g4_, g5_;
+  int8_t b0_, b1_, b2_, b3_, b4_;
+  uint16_t hsync_polarity_;
+  uint16_t hsync_front_porch_;
+  uint16_t hsync_pulse_width_;
+  uint16_t hsync_back_porch_;
+  uint16_t vsync_polarity_;
+  uint16_t vsync_front_porch_;
+  uint16_t vsync_pulse_width_;
+  uint16_t vsync_back_porch_;
+  uint16_t pclk_active_neg_;
+  uint16_t de_idle_high_;
+  uint16_t pclk_idle_high_;
 
-  esp_lcd_panel_handle_t _panel_handle = NULL;
-  esp_rgb_panel_t *_rgb_panel;
+  esp_lcd_panel_handle_t panel_handle_ = nullptr;
+  esp_rgb_panel_t *rgb_panel_ = nullptr;
 };
