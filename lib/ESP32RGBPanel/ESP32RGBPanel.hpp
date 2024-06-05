@@ -148,12 +148,10 @@ public:
     ESP_ERROR_CHECK(esp_lcd_panel_reset(panel_handle_));
     ESP_ERROR_CHECK(esp_lcd_panel_init(panel_handle_));
 
-    rgb_panel_ = __containerof(panel_handle_, esp_rgb_panel_t, base);
-
     LCD_CAM.lcd_ctrl2.lcd_vsync_idle_pol = vsync_polarity_;
     LCD_CAM.lcd_ctrl2.lcd_hsync_idle_pol = hsync_polarity_;
 
-    return (uint16_t *)rgb_panel_->fb;
+    return (uint16_t *)__containerof(panel_handle_, esp_rgb_panel_t, base)->fb;
   }
 
 private:
@@ -175,5 +173,4 @@ private:
   uint16_t pclk_idle_high_;
 
   esp_lcd_panel_handle_t panel_handle_ = nullptr;
-  esp_rgb_panel_t *rgb_panel_ = nullptr;
 };
