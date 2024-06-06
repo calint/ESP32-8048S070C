@@ -25,6 +25,3 @@
   - framework-arduinoespressif32 @ 3.20014.231204 (2.0.14) 
   - tool-esptoolpy @ 1.40501.0 (4.5.1) 
   - toolchain-xtensa-esp32 @ 8.4.0+2021r2-patch5
-* dependencies:
-  - https://github.com/moononournation/Arduino_GFX/releases/tag/v1.4.7
-  - lib/Touch_GT911
